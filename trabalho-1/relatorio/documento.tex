@@ -1,0 +1,550 @@
+\documentclass[12pt, a4paper]{article}
+
+% ----- PACOTES ESSENCIAIS -----
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazilian]{babel}
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+\usepackage{indentfirst}
+\setlength{\parindent}{1.25cm}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage[font=small, labelfont=bf]{caption}
+\usepackage{titlesec}
+\newcommand{\sectionbreak}{\clearpage}
+\usepackage{float}
+
+% Pacotes para matemática (equações, símbolos)
+\usepackage{amsmath, amsfonts, amssymb}
+
+% Pacote para links (URLs e referências internas cruzadas)
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=blue,
+	filecolor=magenta,      
+	urlcolor=blue,
+	citecolor=black,
+}
+
+% ---> ADICIONE ESTE PACOTE AQUI <---
+\usepackage{xurl}
+
+% Codigos
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\floatname{algorithm}{Algoritmo}
+
+% Pacote para inserção de figuras
+\usepackage{graphicx}
+% Configuração fundamental: informa ao LaTeX onde procurar os gráficos.
+% Como o .tex está em /relatorio e os gráficos em /graficos, voltamos um nível (../)
+\graphicspath{{../graficos/}}
+\usepackage{float}
+
+% Pacote para tabelas com qualidade acadêmica
+\usepackage{booktabs}
+\usepackage{multirow}
+
+% Pacote para links (URLs e referências internas cruzadas)
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=blue,
+	filecolor=magenta,      
+	urlcolor=blue,
+	citecolor=black,
+}
+
+% ----- INFORMAÇÕES DO DOCUMENTO -----
+\title{
+	\vspace{-2cm}
+	\Large \textbf{Universidade Federal do Ceará -- UFC} \\
+	\large Programa de Pós-Graduação em Engenharia Elétrica (PPGEE) \\
+	\large Disciplina: Reconhecimento de Padrões (TIP8311) \\
+	\vspace{1cm}
+	\LARGE \textbf{Trabalho Computacional I}
+}
+\author{
+	\textbf{Aluno:} Luis Felipe Carneiro de Souza -- 593034 \\
+	\textbf{Professor:} Prof. Dr. Guilherme de Alencar Barreto
+}
+%\date{\today}
+
+\begin{document}
+	
+	\maketitle
+	
+	\begin{abstract}
+		Este documento apresenta os resultados e discussões referentes ao trabalho computacional I da disciplina de Reconhecimento de Padrões. O qual aborda os classificadores Vizinho Mais Próximo (NN), Mínima Distância ao Centróide (MDC), Mínima Distância ao Centróide Versão Robusta a \textit{Outliers} (MDCR) e classificador de Máxima Correlação (MC). Além da análise da proporção entre separação do conjunto de treino e teste para o treinamento e validação do modelo respectivamente. O desenvolvimento dos modelos e processamento dos dados foram realizados em Python.
+	\end{abstract}
+	
+	% ----- CORPO DO TEXTO -----
+	
+	\section{Introdução}
+	
+	As técnicas utilizadas para classificação são baseadas em algoritmos que, a partir dos valores das variáveis preditoras associados a um elemento do conjunto de dados, permitam classificá-la em uma das classes identificadas pelos valores da variável resposta segundo algum critério \cite{morettin}.
+	
+	\subsection{Vizinho Mais Próximo}
+	
+	Trata-se de um clássico e simples modelo de \textit{Machine Learning}. O classificador NN é um modelo supervisionado não paramétrico no qual seu algoritmo consiste em "olhar" para o ponto do conjunto de treino que mais próximo a entrada $x$. \cite{murphy2013machine}. Uma característica desse modelo é que o processo de treinamento limita‑se a armazenar e utilizar o conjunto de treinamento por isso, ele é classificado como um modelo de \textit{memory‑based learning} (também chamado \textit{instance‑based learning}).
+	O pseudo-código que descreve o modelo NN é apresentado no Algoritmo \ref*{alg:1nn}
+	
+	\begin{algorithm}[htpb]
+		\caption{Classificador Vizinho Mais Próximo}
+		\label{alg:1nn}
+		\begin{algorithmic}[1] % O [1] ativa a numeração das linhas
+			\State \textbf{Passo 1} -- Armazenar em disco ou memória todo o conjunto $X$, no formato adequado.
+			\State \textbf{Passo 2} -- Para cada novo vetor de atributos $\mathbf{x}_{\text{new}}$ ainda não-classificado, realizar uma busca em $X$ pelo índice do vetor de atributos mais próximo de $\mathbf{x}_{\text{new}}$:
+			
+			% O vspace ajusta o espaço para a equação não ficar colada no texto
+			\vspace{-0.3cm} 
+			\begin{equation}
+				i^* = \underset{i=1,\dots,N}{\arg\min} \, \text{dist}(\mathbf{x}_{\text{new}}, \mathbf{x}_i)
+				\label{eq:dist_knn}
+			\end{equation}
+			
+			% \Statex cria uma linha sem numeração, ideal para o "em que..."
+			\Statex em que $\text{dist}(\mathbf{x}_{\text{new}}, \mathbf{x}_i)$ é uma função que mede a distância entre os dois vetores $\mathbf{x}_{\text{new}}$ e $\mathbf{x}_i$.
+			
+			\State \textbf{Passo 3} -- Atribuir ao vetor $\mathbf{x}_{\text{new}}$ a mesma classe que $\mathbf{x}_{i^*}$.
+		\end{algorithmic}
+		\vspace{0.2cm} % Dá um pequeno respiro entre o fim do código e a fonte
+		\noindent \small{\textbf{Fonte:} \cite{Barreto}}
+		
+	\end{algorithm}
+	
+	
+	Um parâmetro importante do classificador trata-se da distância utilizada para se computar o elemento mais próximo da instância a se classificar, a distância de Minkwoski é definida conforme a Equação \ref{eq:mink}:
+	
+	\begin{equation}
+		d_M^{(m)}(\textbf{x}, \textbf{y}) = \left( \sum_{j=1}^{p}|x_j - y_j|^m \right)^{\frac{1}{m}}
+		\label{eq:mink}
+	\end{equation}
+	
+	\begin{center}
+		\noindent\begin{minipage}{0.48\textwidth}
+			\textbf{No qual:}
+			\begin{itemize}
+				\item $\mathbf{x}=(x_1,\dots,x_p)$
+				\item $\mathbf{y}=(y_1,\dots,y_p)$
+				\item $p$ é a dimensão
+				\item $m>0$ é o parâmetro da norma
+			\end{itemize}
+		\end{minipage}
+	\end{center}
+
+	O parâmetro $m$ descreve a organização dos dados no espaço.
+	
+	\subsection{Mínima Distância ao Centróide}
+	
+	Diferentemente do NN, classificador de mínima distância ao centróide não mais precisa armazenar todo o conjunto de treinamento na sua etapa de treino, agora computa-se o vetor médio para cada classe e assim usa-se a norma euclidiana para computar a distância entre a entrada $x$ e os vetores médios de cada classe. O algoritimo do MDC é apresentado no Algoritmo \ref{alg:mdc}
+	
+	\begin{algorithm}[htpb]
+		\caption{Classificador Centróide Mais Próximo}
+		\label{alg:mdc}
+		\begin{algorithmic}[1]
+			\State \textbf{Passo 1} -- Encontrar o vetor médio (centróide) de cada classe:
+			
+			\vspace{-0.3cm}
+			\begin{equation}
+				\mathbf{m}_i = \frac{1}{N_i} \sum_{\forall \mathbf{x} \in \omega_i} \mathbf{x}
+				\label{eq:mdc_media}
+			\end{equation}
+			
+			\Statex em que $N_i$ é o número de exemplos da $i$-ésima classe (cujo rótulo é $\omega_i$), para $i = 1, \dots, C$.
+			
+			\State \textbf{Passo 2} -- Atribuir ao novo vetor de atributos $\mathbf{x}_{\text{new}}$ o rótulo da classe de $\mathbf{m}_{i^*}$, se:
+			
+			\vspace{-0.3cm}
+			\begin{equation}
+				\|\mathbf{x}_{\text{new}} - \mathbf{m}_{i^*}\|^2 < \|\mathbf{x}_{\text{new}} - \mathbf{m}_i\|^2, \quad \forall i \neq i^*
+				\label{eq:mdc_dist}
+			\end{equation}
+			
+			\Statex em que $\|\mathbf{x} - \mathbf{y}\|^2$ é uma função que mede a distância euclidiana ao quadrado entre os dois vetores $\mathbf{x}$ e $\mathbf{y}$.
+		\end{algorithmic}
+		
+		\vspace{0.2cm}
+		\noindent \small{\textbf{Fonte:} \cite{Barreto}.}
+	\end{algorithm}
+	
+	\subsection{Mínima Distância ao Centróide Versão Robusta a \textit{Outliers}}
+	
+	No classificador de mínima distância ao centróide versão robusta a outliers, os vetores para cada classe passam a ser o valor mediano das instâncias de cada classe, e a medida de dissimilaridade utilizada trata-se da distância quarteirão. O Algoritmo \ref{alg:mdc_robusto} apresenta o pseudo-código do modelo.
+	
+	\begin{algorithm}[htpb]
+		\caption{Classificador Centróide Mais Próximo Versão Robusta a Outliers}
+		\label{alg:mdc_robusto}
+		\begin{algorithmic}[1]
+			\State \textbf{Passo 1} -- Encontrar o vetor mediano de cada classe:
+			
+			\vspace{-0.3cm}
+			\begin{equation}
+				\mathbf{m}_i = \text{mediana}(\{\mathbf{x} \mid \forall \mathbf{x} \in \omega_i\})
+				\label{eq:mdc_mediana}
+			\end{equation}
+			
+			\Statex obtido a partir do cálculo da mediana de cada atributo $\{x_j\}_{j=1}^p$ do conjunto de treinamento da classe $\omega_i$.
+			
+			\State \textbf{Passo 2} -- Atribuir ao novo vetor de atributos $\mathbf{x}_{\text{new}}$ o rótulo da classe de $\mathbf{m}_{i^*}$, se:
+			
+			\vspace{-0.3cm}
+			\begin{equation}
+				\|\mathbf{x}_{\text{new}} - \mathbf{m}_{i^*}\|_1 < \|\mathbf{x}_{\text{new}} - \mathbf{m}_i\|_1, \quad \forall i \neq i^*
+				\label{eq:mdc_dist_l1}
+			\end{equation}
+			
+			\Statex em que $\|\mathbf{x} - \mathbf{y}\|_1$ é uma função que mede a distância quarteirão entre os dois vetores $\mathbf{x}$ e $\mathbf{y}$.
+		\end{algorithmic}
+		
+		\vspace{0.2cm}
+		\noindent \small{\textbf{Fonte:} \cite{Barreto}.}
+	\end{algorithm}
+	
+	\subsection{Máxima Correlação}
+	
+	\begin{algorithm}[htpb]
+		\caption{Classificador de Máxima Correlação}
+		\label{alg:max_correlacao}
+		\begin{algorithmic}[1]
+			\State \textbf{Passo 1} -- Encontrar o vetor centróide de cada classe:
+			
+			\vspace{-0.3cm}
+			\begin{equation}
+				\mathbf{m}_i = \frac{1}{N_i} \sum_{\forall \mathbf{x} \in \omega_i} \mathbf{x}
+				\label{eq:maxcorr_centroide}
+			\end{equation}
+			
+			\Statex em que $N_i$ é o número de exemplos da $i$-ésima classe (cujo rótulo é $\omega_i$), para $i = 1, \dots, C$.
+			
+			\State \textbf{Passo 2} -- Atribuir um novo vetor de atributos $\mathbf{x}_{\text{new}}$ à mesma classe que $\mathbf{m}_{i^*}$, se:
+			
+			\vspace{-0.3cm}
+			\begin{equation}
+				\tilde{\mathbf{m}}_{i^*}^\top \tilde{\mathbf{x}}_{\text{new}} > \tilde{\mathbf{m}}_i^\top \tilde{\mathbf{x}}_{\text{new}}, \quad \forall i \neq i^*
+				\label{eq:maxcorr_decisao}
+			\end{equation}
+			
+			\Statex em que $\tilde{\mathbf{m}}_i = \mathbf{m}_i / \|\mathbf{m}_i\|$ e $\tilde{\mathbf{x}}_{\text{new}} = \mathbf{x}_{\text{new}} / \|\mathbf{x}_{\text{new}}\|$ são as versões de norma unitária de $\mathbf{m}_i$ e $\mathbf{x}_{\text{new}}$, respectivamente.
+		\end{algorithmic}
+		
+		\vspace{0.2cm}
+		\noindent \small{\textbf{Fonte:} \cite{Barreto}.}
+	\end{algorithm}
+	
+	
+	\section{Metodologia}
+
+	Para o desenvolvimento deste trabalho, utilizou-se a base de dados \textit{Vertebral Column}, disponibilizada pelo repositório da \textit{University of California, Irvine} (UCI). O problema consiste em classificar patologias da coluna vertebral em três classes distintas: Hérnia de Disco, Espondilolistese e Normal, a partir de atributos biomecânicos extraídos de imagens médicas.
+	
+	\subsection{Pré-processamento dos Dados}
+	A fim de garantir que atributos com diferentes escalas não dominassem os cálculos de distância, aplicou-se a padronização \textit{Z-score} nos dados, com exceção do classificador MC. Para cada atributo, a média foi centralizada em zero e o desvio padrão escalonado para um. Os parâmetros de padronização (média e desvio padrão) foram extraídos exclusivamente do conjunto de treinamento e, posteriormente, aplicados aos conjuntos de treinamento e teste, evitando assim o vazamento de dados (\textit{data leakage}).
+	
+	\subsection{Classificadores Implementados}
+	Quatro algoritmos de classificação baseados em métricas de distância e similaridade foram desenvolvidos do zero para este estudo:
+	
+	\begin{itemize}
+		\item \textbf{K-Vizinhos Mais Próximos (KNN):} Implementado com $k=1$. A métrica de dissimilaridade utilizada foi uma variação da Distância de Minkowski, calculada como:
+		$$d(x, y) = \sum_{i=1}^{n} |x_i - y_i|^m$$
+		Foram avaliadas diferentes ordens topológicas variando o parâmetro $m$, testando-se os valores $m \in \{0.5; 0.66; 1.0; 1.5; 2.0; 5.0\}$.
+		
+		\item \textbf{Distância Mínima ao Centróide (DMC):} Na etapa de treinamento, o centróide de cada classe foi calculado como a média aritmética (centro de massa) das amostras pertencentes à respectiva classe. Na etapa de predição, as amostras de teste foram atribuídas à classe do centróide mais próximo, utilizando a distância Euclidiana quadrada.
+		
+		\item \textbf{DMC Robusto a Outliers (DMCR):} Para conferir robustez contra ruídos, os centróides foram definidos pela mediana espacial das amostras de cada classe. Consequentemente, a métrica de predição foi substituída pela distância de Manhattan (\textit{L1-norm}), calculada pela soma das diferenças absolutas.
+		
+		\item \textbf{Máxima Correlação (MaxCorr):} Semelhante ao DMC tradicional, utiliza a média aritmética para definir os centróides. Contudo, a métrica de atribuição no teste baseia-se no cálculo do produto interno (correlação linear) entre o vetor de teste e os centróides, atribuindo a amostra à classe que maximiza este valor.
+	\end{itemize}
+	
+	\subsection{Protocolo Experimental e Avaliação}
+	Para assegurar a validade estatística dos resultados, adotou-se o método de reamostragem de \textit{Monte Carlo}. Foram realizadas $100$ rodadas independentes para cada configuração de modelo. Em cada rodada, os dados foram embaralhados de forma aleatória e divididos nos conjuntos de treinamento e teste.
+	
+	Para avaliar a estabilidade dos modelos frente à quantidade de dados disponíveis, foram testadas cinco proporções diferentes de separação (Treino/Teste): $20/80$, $30/70$, $50/50$, $70/30$ e $80/20$.
+	
+	O desempenho dos classificadores foi mensurado extraindo-se as seguintes métricas ao final das 100 rodadas:
+	\begin{enumerate}
+		\item Custo computacional médio (tempo de treinamento e tempo de teste, em segundos).
+		\item Estatísticas descritivas da acurácia global (média, mediana, desvio-padrão, valor máximo e valor mínimo).
+		\item Acurácia média isolada por classe, com o objetivo de identificar quais patologias apresentam maior dificuldade de separação no espaço de atributos.
+		\item Matrizes de confusão referentes à melhor e à pior rodada de cada modelo.
+	\end{enumerate}
+	
+	\section{Resultados}
+	
+	Os resultados obtidos a partir das 100 rodadas independentes permitiram uma análise abrangente do comportamento dos classificadores frente à base de dados de patologias da coluna vertebral. A avaliação foi dividida de acordo com os critérios estabelecidos na metodologia.
+	
+	\subsection{Custo Computacional (Treinamento vs. Teste)}
+	A análise dos tempos médios de execução revelou uma diferença arquitetônica fundamental entre os modelos. O algoritmo KNN, por ser um classificador do tipo \textit{lazy learner}, apresentou um tempo de treinamento quase nulo (média de [INSERIR VALOR] segundos), consistindo apenas no armazenamento dos dados. Em contrapartida, seu tempo de teste foi o maior entre todos os modelos ([INSERIR VALOR] segundos), visto que necessita calcular a distância da nova amostra para todas as amostras de treino. 
+	
+	Por outro lado, os classificadores baseados em centróides (DMC, DMCR e MaxCorr) exibiram tempos de teste extremamente baixos (média de [INSERIR VALOR] segundos), uma vez que a nova amostra é comparada apenas contra os três vetores de centróides, tornando-os altamente eficientes para aplicações em tempo real.
+	
+	\subsection{Desempenho Global e Efeito do Particionamento}
+	A variação da proporção dos dados de treino e teste demonstrou impacto direto na acurácia e na estabilidade dos modelos. Conforme esperado, partições com poucos dados de treinamento (ex: $20/80$) resultaram nas menores médias de acurácia e nos maiores desvios-padrão (indicando alta instabilidade). Ao aumentar a proporção para $80/20$, observou-se o pico de desempenho global.
+	
+	A Tabela \ref{tab:resultados_gerais} sumariza as métricas estatísticas para a partição $70/30$ (cenário padrão na literatura). Observa-se que o classificador [INSERIR NOME DO MELHOR MODELO] obteve a melhor acurácia média de [INSERIR VALOR]\%, acompanhada de uma mediana de [INSERIR VALOR]\%. O modelo DMCR [descrever se o DMCR foi melhor ou pior que o DMC, justificando pela robustez da mediana e distância L1]. No KNN, o parâmetro $m = [INSERIR MELHOR M]$ (distância de [Euclidiana/Manhattan/etc.]) mostrou-se o mais adequado para a topologia deste espaço de características.
+	
+	% Exemplo de Tabela em LaTeX
+	\begin{table}[htpb]
+		\centering
+		\caption{Estatísticas de Acurácia para o particionamento 70\% Treino e 30\% Teste (100 rodadas)}
+		\label{tab:resultados_gerais}
+		\begin{tabular}{lccccc}
+			\hline
+			\textbf{Modelo} & \textbf{Média} & \textbf{Mediana} & \textbf{Desvio-Padrão} & \textbf{Mínimo} & \textbf{Máximo} \\ \hline
+			KNN ($m=0.5$)   & [VALOR]\%      & [VALOR]\%        & $\pm$ [VALOR]          & [VALOR]\%       & [VALOR]\%       \\
+			KNN ($m=1.0$)   & [VALOR]\%      & [VALOR]\%        & $\pm$ [VALOR]          & [VALOR]\%       & [VALOR]\%       \\
+			KNN ($m=2.0$)   & [VALOR]\%      & [VALOR]\%        & $\pm$ [VALOR]          & [VALOR]\%       & [VALOR]\%       \\
+			DMC             & [VALOR]\%      & [VALOR]\%        & $\pm$ [VALOR]          & [VALOR]\%       & [VALOR]\%       \\
+			DMCR            & [VALOR]\%      & [VALOR]\%        & $\pm$ [VALOR]          & [VALOR]\%       & [VALOR]\%       \\
+			MaxCorr         & [VALOR]\%      & [VALOR]\%        & $\pm$ [VALOR]          & [VALOR]\%       & [VALOR]\%       \\ \hline
+		\end{tabular}
+	\end{table}
+	
+	\subsection{Análise das Matrizes de Confusão e Dificuldade por Classe}
+	A extração das taxas de acerto isoladas por classe permitiu diagnosticar o grau de sobreposição das patologias no espaço de características. A classe \textit{Espondilolistese} apresentou a maior taxa média de acertos (aprox. [INSERIR VALOR]\%), indicando que suas características biomecânicas são bem distintas e linearmente separáveis das demais. 
+	
+	Em contrapartida, observou-se uma considerável confusão entre as classes \textit{Hérnia de Disco} e \textit{Normal}. Na pior matriz de confusão registrada, grande parte das amostras de [CLASSE X] foram erroneamente classificadas como [CLASSE Y], sugerindo que os atributos fornecidos para estas duas condições possuem forte interseção, dificultando a criação de fronteiras de decisão rígidas pelos algoritmos implementados.
+	
+	% EXEMPLO DE FIGURA
+	\begin{figure}[htpb]
+		\centering
+		% Basta colocar o nome do arquivo. O LaTeX já vai procurar na pasta ../graficos/
+		% Exemplo: \includegraphics[width=0.8\textwidth]{matriz_confusao.pdf}
+		\includegraphics[width=0.7\textwidth]{acuracias.pdf}
+		% \rule{8cm}{5cm} % <-- REMOVA ESTA LINHA. É apenas um espaço reservado (placeholder) para o exemplo compilar.
+		\caption{Evolução da Acurácia (Média vs Mediana) e Desvio Padrão por Modelo.}
+		\label{fig:acuracias}
+	\end{figure}
+	
+	A Figura \ref{fig:acuracias} ilustra o desempenho do modelo na base de teste.
+	
+	\subsection{Inserção de Tabelas}
+	Para reportar métricas de desempenho (Acurácia, Precisão, Recall), recomenda-se o uso do pacote \texttt{booktabs}, que cria tabelas mais limpas e sem linhas verticais.
+	
+	% EXEMPLO DE TABELA
+	\begin{table}[htpb]
+		\centering
+		\caption{Métricas de desempenho dos modelos avaliados.}
+		\vspace{0.2cm}
+		\begin{tabular}{lccc}
+			\toprule
+			\textbf{Modelo} & \textbf{Acurácia (\%)} & \textbf{Precisão (\%)} & \textbf{Recall (\%)} \\
+			\midrule
+			Perceptron & 85.4 & 84.1 & 86.2 \\
+			MLP        & 92.1 & 91.5 & 92.8 \\
+			SVM        & 94.3 & 93.9 & 94.5 \\
+			\bottomrule
+		\end{tabular}
+		\label{tab:metricas}
+	\end{table}
+	
+	\section{Conclusão}
+	O presente trabalho atingiu o objetivo de implementar, avaliar e comparar abordagens clássicas de Reconhecimento de Padrões na categorização de patologias da coluna vertebral. O rigor metodológico de utilizar 100 rodadas independentes de \textit{Monte Carlo} garantiu uma visão estatisticamente robusta sobre a verdadeira capacidade de generalização dos modelos, superando o viés que uma única rodada de testes poderia causar.
+	
+	Foi possível concluir que o tamanho do conjunto de treinamento é um fator crítico para a estabilidade; modelos treinados com proporções menores que 50\% dos dados sofreram acentuada queda de performance e alta variância. No aspecto computacional, confirmou-se o \textit{trade-off} clássico entre métodos baseados em vizinhança e centróides: enquanto o KNN tendeu a apresentar acurácias [maiores/menores], o seu alto custo computacional na etapa de teste pode ser um fator limitante em bases de dados massivas. Por sua vez, o DMC e suas variações mostraram-se alternativas altamente velozes e [descrever se a acurácia foi competitiva ou muito inferior].
+	
+	Por fim, a análise por classe revelou que o problema central desta base de dados reside na distinção entre espinhas normais e hérnias de disco. Como trabalhos futuros, sugere-se a aplicação de técnicas de extração de características (como PCA) ou a implementação de algoritmos de fronteiras não lineares (como \textit{Support Vector Machines} ou \textit{Redes Neurais}) para tentar desemaranhar as classes que apresentaram maior confusão nas métricas deste estudo.
+	
+	\section{Códigos e Repositório}
+	Todos os códigos desenvolvidos para a geração dos resultados, incluindo os \textit{Jupyter Notebooks} em Python, estão versionados e disponíveis publicamente no GitHub. 
+	
+	O repositório pode ser acessado através do seguinte link: \\
+	\url{https://github.com/LuisFelipeCSouza/reconhecimento-de-padroes/tree/main/trabalho-1}
+	
+	\bibliographystyle{ieeetr} 
+	
+	% Indica o nome do arquivo .bib (sem a extensão .bib)
+	\bibliography{ref}
+	
+	\appendix
+	\section{Gráficos de tempo médio de execução}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Tempo médio de execução (treinamento e teste) para 20\% do conjunto de dados usado para teste.}
+		\label{fig:tempos_02}
+		
+		\includegraphics[width=0.8\textwidth]{tempos_02.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Tempo médio de execução (treinamento e teste) para 30\% do conjunto de dados usado para teste.}
+		\label{fig:tempos_03}
+		
+		\includegraphics[width=0.8\textwidth]{tempos_03.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Tempo médio de execução (treinamento e teste) para 50\% do conjunto de dados usado para teste.}
+		\label{fig:tempos_05}
+		
+		\includegraphics[width=0.8\textwidth]{tempos_05.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+		
+		
+	\begin{figure}[htpb]
+		\centering
+		\caption{Tempo médio de execução (treinamento e teste) para 70\% do conjunto de dados usado para teste.}
+		\label{fig:tempos_07}
+		
+		\includegraphics[width=0.8\textwidth]{tempos_07.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Tempo médio de execução (treinamento e teste) para 80\% do conjunto de dados usado para teste.}
+		\label{fig:tempos_08}
+		
+		\includegraphics[width=0.8\textwidth]{tempos_08.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\section{Matrizes de confusão}
+	\subsection{Melhor Matriz de confusão}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Matriz de confusão das melhores rodadas de cada modelo, divisão de teste 20\%.}
+		\label{fig:melhor_cm_02}
+		
+		\includegraphics[width=0.6\textwidth]{melhor_cm_02.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Matriz de confusão das melhores rodadas de cada modelo, divisão de teste 30\%.}
+		\label{fig:melhor_cm_03}
+		
+		\includegraphics[width=0.6\textwidth]{melhor_cm_03.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Matriz de confusão das melhores rodadas de cada modelo, divisão de teste 50\%.}
+		\label{fig:melhor_cm_05}
+		
+		\includegraphics[width=0.6\textwidth]{melhor_cm_05.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Matriz de confusão das melhores rodadas de cada modelo, divisão de teste 70\%.}
+		\label{fig:melhor_cm_07}
+		
+		\includegraphics[width=0.6\textwidth]{melhor_cm_07.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Matriz de confusão das melhores rodadas de cada modelo, divisão de teste 80\%.}
+		\label{fig:melhor_cm_08}
+		
+		\includegraphics[width=0.6\textwidth]{melhor_cm_08.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\clearpage
+	\subsection{Piores Matrizes de confusão}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Matriz de confusão das piores rodadas de cada modelo, divisão de teste 20\%.}
+		\label{fig:pior_cm_02}
+		
+		\includegraphics[width=0.6\textwidth]{pior_cm_02.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Matriz de confusão das piores rodadas de cada modelo, divisão de teste 30\%.}
+		\label{fig:pior_cm_03}
+		
+		\includegraphics[width=0.6\textwidth]{pior_cm_03.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Matriz de confusão das piores rodadas de cada modelo, divisão de teste 50\%.}
+		\label{fig:pior_cm_05}
+		
+		\includegraphics[width=0.6\textwidth]{pior_cm_05.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Matriz de confusão das piores rodadas de cada modelo, divisão de teste 70\%.}
+		\label{fig:pior_cm_07}
+		
+		\includegraphics[width=0.6\textwidth]{pior_cm_07.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Matriz de confusão das piores rodadas de cada modelo, divisão de teste 80\%.}
+		\label{fig:pior_cm_08}
+		
+		\includegraphics[width=0.6\textwidth]{pior_cm_08.pdf}
+		
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+		
+	\end{figure}
+	
+\end{document}

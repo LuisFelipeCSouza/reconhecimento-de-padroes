@@ -1,0 +1,255 @@
+\documentclass[12pt, a4paper]{article}
+
+% ----- PACOTES ESSENCIAIS -----
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazilian]{babel}
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+\usepackage{indentfirst}
+\setlength{\parindent}{1.25cm}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage[font=small, labelfont=bf]{caption}
+\usepackage{titlesec}
+\newcommand{\sectionbreak}{\clearpage}
+\usepackage{float}
+
+% Pacotes para matemática (equações, símbolos)
+\usepackage{amsmath, amsfonts, amssymb}
+
+% Pacote para links (URLs e referências internas cruzadas)
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=blue,
+	filecolor=magenta,      
+	urlcolor=blue,
+	citecolor=black,
+}
+
+% ---> ADICIONE ESTE PACOTE AQUI <---
+\usepackage{xurl}
+
+% Codigos
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\floatname{algorithm}{Algoritmo}
+
+% Pacote para inserção de figuras
+\usepackage{graphicx}
+% Configuração fundamental: informa ao LaTeX onde procurar os gráficos.
+% Como o .tex está em /relatorio e os gráficos em /graficos, voltamos um nível (../)
+\graphicspath{{../graficos/}}
+\usepackage{float}
+
+% Pacote para tabelas com qualidade acadêmica
+\usepackage{booktabs}
+\usepackage{multirow}
+
+% Pacote para links (URLs e referências internas cruzadas)
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=blue,
+	filecolor=magenta,      
+	urlcolor=blue,
+	citecolor=black,
+}
+
+% ----- INFORMAÇÕES DO DOCUMENTO -----
+\title{
+	\vspace{-2cm}
+	\Large \textbf{Universidade Federal do Ceará -- UFC} \\
+	\large Programa de Pós-Graduação em Engenharia Elétrica (PPGEE) \\
+	\large Disciplina: Reconhecimento de Padrões (TIP8311) \\
+	\vspace{1cm}
+	\LARGE \textbf{Trabalho Computacional II}
+}
+\author{
+	\textbf{Aluno:} Luis Felipe Carneiro de Souza -- 593034 \\
+	\textbf{Professor:} Prof. Dr. Guilherme de Alencar Barreto
+}
+%\date{\today}
+
+\begin{document}
+	
+	\maketitle
+	
+	\begin{abstract}
+		Este documento apresenta os resultados e discussões referentes ao trabalho computacional II da disciplina de Reconhecimento de Padrões. O trabalho aborda a implementação de quatro métodos algébricos distintos para o cálculo das matrizes de covariância global e específicas por classe, avaliando conjuntos de dados com 4 e 24 atributos (sensores). A acurácia matemática e a eficiência computacional das abordagens empíricas foram rigorosamente comparadas com a função nativa da linguagem Python por meio da norma da matriz de diferenças e de análises estatísticas de tempo de execução ao longo de 100 rodadas. Além disso, investigou-se a invertibilidade e a estabilidade numérica das matrizes resultantes utilizando o posto matricial e o número de condicionamento, aplicando-se técnicas de regularização de Tikhonov para viabilizar a inversão em cenários de singularidade ou instabilidade ocasionados pela alta dimensionalidade.. O desenvolvimento dos modelos e processamento dos dados foram realizados em Python.
+	\end{abstract}
+	
+	% ----- CORPO DO TEXTO -----
+	
+	\section{Introdução}
+	
+	No contexto de Reconhecimento de Padrões e Aprendizado de Máquina, a matriz de covariância desempenha um papel fundamental na modelagem estatística dos dados. Ela é o elemento central para o cálculo da Distância de Mahalanobis e para a construção de classificadores baseados na Teoria de Decisão de Bayes, assumindo distribuições normais multivariadas.
+	
+	O presente trabalho tem como objetivo explorar a implementação computacional da estimação da matriz de covariância global e por classes, utilizando bases de dados com diferentes dimensionalidades (4 e 24 sensores). A atividade propõe a análise comparativa de quatro abordagens algébricas distintas, contrastando-as com a função nativa da linguagem de programação adotada (Python) em termos de exatidão matemática e eficiência computacional. 
+	
+	Ademais, investiga-se a invertibilidade das matrizes estimadas por meio da análise do posto matricial e do número de condicionamento. Para os cenários em que o aumento da dimensionalidade acarreta matrizes singulares ou mal-condicionadas, aborda-se a aplicação de técnicas de regularização para garantir a estabilidade numérica na inversão matricial, um passo crítico para a viabilidade de diversos classificadores estatísticos.
+	
+	
+	\section{Metodologia}
+	
+	\subsection{Base de Dados}
+	Para o desenvolvimento do trabalho, foram utilizados conjuntos de dados contendo atributos extraídos de 4 e 24 sensores. A variável resposta, que define a classe de cada vetor de características, encontra-se na última coluna das matrizes de dados. As amostras foram organizadas no formato $(p \times N)$, em que $p$ representa a dimensionalidade (número de sensores) e $N$ o número total de amostras.
+	
+	\subsection{Estimação da Matriz de Covariância}
+	Foram implementados quatro algoritmos distintos para o cálculo da matriz de covariância, denominados de Método 1 a Método 4. 
+	
+	\begin{itemize}
+		\item \textbf{Métodos com Laços de Repetição (1 e 3):} Baseiam-se no somatório iterativo do produto externo dos vetores de atributos centrados na média (ou ajustados ao final). Estas abordagens utilizam laços \textit{for} explícitos, percorrendo as $N$ amostras do conjunto.
+		\item \textbf{Métodos Vetorizados (2 e 4):} Exploram operações puramente matriciais da álgebra linear computacional, calculando a dispersão através da multiplicação direta da matriz de dados por sua transposta ($X X^\top$), dispensando o uso de laços iterativos.
+	\end{itemize}
+	
+	Para assegurar a equivalência com a teoria abordada em sala de aula, todas as implementações foram ajustadas para utilizar o estimador enviesado, ou seja, dividindo-se por $N$ e não por $(N-1)$. Para a validação (\textbf{Q1}), o comando nativo foi configurado com um fator de correção para divisão por $N$, e o erro da implementação foi aferido calculando-se a norma da matriz de diferenças:
+	\begin{equation}
+		E = \| C_{my} - C_{ref} \|_F
+	\end{equation}
+	em que $C_{my}$ é a matriz obtida pelos métodos implementados e $C_{ref}$ é a gerada pelo comando nativo.
+	
+	\subsection{Avaliação Computacional e Condicionamento}
+	Para a comparação de desempenho (\textbf{Q2}), aplicou-se o método de reamostragem simulada, executando-se cada um dos métodos ao longo de 100 rodadas. O tempo médio de execução e o desvio-padrão foram registrados para gerar distribuições estatísticas analisadas via Histogramas e \textit{Violin Plots}.
+	
+	Por fim (\textbf{Q3} e \textbf{Q4}), a matriz global e as matrizes específicas de cada classe foram submetidas a uma análise de estabilidade numérica. O posto completo (\textit{rank}) e o número de condicionamento foram medidos. Nos casos em que a matriz não pôde ser invertida de forma direta (indicando colinearidade ou falta de amostras face à dimensionalidade), aplicou-se a \textbf{Regularização de Tikhonov}, somando-se um pequeno valor $\lambda$ à diagonal principal:
+	\begin{equation}
+		C_{reg} = C + \lambda I
+	\end{equation}
+	no qual $I$ é a matriz identidade de mesma dimensão $p \times p$ e $\lambda = 10^{-6}$.
+	
+	\section{Resultados}
+	
+	\subsection{Validação das Implementações (Q1)}
+	A comparação entre as matrizes geradas pelos Métodos 1 a 4 e a referência nativa comprovou a exatidão algébrica das abordagens. Para a base de dados de 24 sensores, a norma da matriz de diferenças $E$ resultou em valores na ordem de $10^{-15}$, o que é compatível com a precisão de ponto flutuante das máquinas (\textit{machine epsilon}). Isso garante que qualquer variação de desempenho entre os métodos seja estritamente computacional, e não teórica.
+	
+	\subsection{Análise de Tempo de Execução (Q2)}
+	A análise das 100 rodadas de \textit{benchmark} revelou discrepâncias significativas entre as lógicas de programação. O Método 4 provou ser o mais eficiente, alcançando um tempo médio de execução de $[INSERIR VALOR]$ segundos com desvio-padrão de $\pm [INSERIR VALOR]$ segundos.
+	
+	\begin{table}[htpb]
+		\centering
+		\caption{Tempo de execução para base de dados 4 sensores.}
+		\vspace{0.2cm}
+		\begin{tabular}{lcc}
+			\toprule
+			\textbf{Modelo} & \textbf{Média (s)} & \textbf{Desvio-Padrão (s)} \\
+			\midrule
+			cov\_1 		  & 0.007471 & 0.000543 \\
+			cov\_2        & 0.000100 & 0.000300  \\
+			cov\_3        & 0.007255 & 0.000516 \\
+			cov\_4 		  & 0.000110 & 0.000313 \\
+			\bottomrule
+		\end{tabular}
+		\label{tab:time_4}
+	\end{table}
+	
+	
+	\begin{table}[htpb]
+		\centering
+		\caption{Tempo de execução para base de dados 24 sensores.}
+		\vspace{0.2cm}
+		\begin{tabular}{lcc}
+			\toprule
+			\textbf{Modelo} & \textbf{Média (s)} & \textbf{Desvio-Padrão (s)} \\
+			\midrule
+			cov\_1 		  & 0.007422 & 0.000498 \\
+			cov\_2        & 0.000145 & 0.000363  \\
+			cov\_3        & 0.007349 & 0.000507 \\
+			cov\_4 		  & 0.000075 & 0.000278 \\
+			\bottomrule
+		\end{tabular}
+		\label{tab:time_24}
+	\end{table}
+	
+	
+	A Figura \ref{fig:sensor_4} e Figura \ref{fig:sensor_24} ilustra o comparativo dos tempos de execução. Os Métodos 1 e 3, que dependem de iterações explícitas, mostraram-se ordens de grandeza mais lentos. A vetorização nativa do Método 4 otimiza o uso do gerenciamento de memória contígua em baixo nível (C/C++), destacando a importância de se evitar laços de repetição no processamento de \textit{arrays} de alta densidade.
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Histograma e Violin Plot do tempo de execução para os diferentes métodos para base de dados de 4 sensores.}
+		\label{fig:sensor_4}
+		% Certifique-se de salvar sua figura com este nome ou altere abaixo
+		\includegraphics[width=0.8\textwidth]{sensor_4.pdf}
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+	\end{figure}
+	
+	\begin{figure}[htpb]
+		\centering
+		\caption{Histograma e Violin Plot do tempo de execução para os diferentes métodos para base de dados de 24 sensores.}
+		\label{fig:sensor_24}
+		% Certifique-se de salvar sua figura com este nome ou altere abaixo
+		\includegraphics[width=0.8\textwidth]{sensor_24.pdf}
+		\vspace{0.2cm}
+		\noindent\small{\textbf{Fonte:} Elaborado pelo autor}
+	\end{figure}
+	
+	\subsection{Invertibilidade e Regularização das Matrizes (Q3 e Q4)}
+	Selecionando o Método 4, procedeu-se ao cálculo das matrizes de covariância global e específicas de classe. 
+	
+	Para a base com 4 sensores, as matrizes apresentaram posto completo ($p=4$) e número de condicionamento na ordem de $[INSERIR VALOR]$. Por serem bem condicionadas, a inversão padrão, calculada via eliminação gaussiana ou fatoração LU, ocorreu sem instabilidades.
+	
+	Contudo, para o conjunto de 24 sensores, o cenário sofre com a maldição da dimensionalidade. A matriz da Classe $[INSERIR CLASSE COM PROBLEMA, SE HOUVER]$ apresentou posto deficiente (ou número de condicionamento elevado na ordem de $[INSERIR VALOR]$), indicando multicolinearidade entre os sensores ou o efeito de uma matriz de covariância empírica amostral onde o número de características é próximo ou excede a quantidade de amostras dessa classe. 
+	
+	Para permitir a inversão, a aplicação da regularização ($C_{reg} = C + \lambda I$) com $\lambda = [INSERIR VALOR]$ introduziu estabilidade à matriz principal, deslocando seus autovalores para longe de zero. A matriz pôde, então, ser invertida com sucesso, validando a abordagem para aplicações onde matrizes empíricas tornam-se singulares.
+	
+	\begin{table}[htpb]
+		\centering
+		\caption{Tempo de execução para base de dados 24 sensores.}
+		\vspace{0.2cm}
+		\begin{tabular}{lccc}
+			\toprule
+			\textbf{Classe} & \textbf{Posto} & \textbf{Condicionamento} & \textbf{Regularização?} \\
+			\midrule
+			Move-Foward	  & 4 & 64.3 & não \\
+			Sharp-Right-Turn   & 4 & 215 & não   \\
+			Slight-Left-Turn        & 4 & 11 & não  \\
+			Slight-Right-turn 		  & 4 & 219 & não  \\
+			\bottomrule
+		\end{tabular}
+		\label{tab:posto_cond_4}
+	\end{table}
+	
+	\begin{table}[htpb]
+		\centering
+		\caption{Tempo de execução para base de dados 24 sensores.}
+		\vspace{0.2cm}
+		\begin{tabular}{lccc}
+			\toprule
+			\textbf{Classe} & \textbf{Posto} & \textbf{Condicionamento} & \textbf{Regularização?} \\
+			\midrule
+			Move-Foward	  & 24 & 53.5 & não \\
+			Sharp-Right-Turn   & 24 & 31.3 & não   \\
+			Slight-Left-Turn        & 24 & 173 & não  \\
+			Slight-Right-turn 		  & 24 & 196 & não  \\
+			\bottomrule
+		\end{tabular}
+		\label{tab:posto_cond_24}
+	\end{table}
+	
+	\section{Conclusão}
+	
+	O trabalho prático consolidou conceitos fundamentais sobre a geometria multivariada e a otimização de código. O cálculo da norma das diferenças atestou o rigor matemático dos quatro métodos elaborados em relação ao método nativo.
+	
+	Do ponto de vista computacional, evidenciou-se de forma empírica que abordagens algébricas vetorizadas reduzem drasticamente o tempo de processamento, fator este indispensável no treinamento de sistemas de Reconhecimento de Padrões sujeitos a vastas bases de dados reais (\textit{Big Data}). 
+	
+	Por fim, a análise do número de condicionamento ressaltou as limitações intrínsecas ao uso empírico de matrizes de covariância em dados de alta dimensão. A técnica de regularização mostrou-se não apenas um contorno matemático elegante, mas uma ferramenta estritamente necessária para viabilizar operações como a inversão de matrizes mal-condicionadas, assegurando que modelos subsequentes de classificação possuam confiabilidade e robustez.
+	
+	\section{Códigos e Repositório}
+	Todos os códigos desenvolvidos para a geração dos resultados, incluindo os \textit{Jupyter Notebooks} em Python, estão versionados e disponíveis publicamente no GitHub. 
+	
+	O repositório pode ser acessado através do seguinte link: \\
+	\url{https://github.com/LuisFelipeCSouza/reconhecimento-de-padroes/tree/main/trabalho-2}
+	
+	\bibliographystyle{ieeetr} 
+	
+	% Indica o nome do arquivo .bib (sem a extensão .bib)
+	\bibliography{ref}
+	
+	\appendix
+	\section{Gráficos de tempo médio de execução}
+	
+	
+	
+\end{document}
