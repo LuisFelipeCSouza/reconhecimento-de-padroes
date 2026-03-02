@@ -30,11 +30,6 @@ Os algoritmos a seguir foram implementados teoricamente e aplicados ao conjunto 
 * **Documentação:** LaTeX (compilado via `pdflatex`)
 
 ## ⚙️ Como Executar
-1. Clone este repositório para a sua máquina local:
-   ```bash
-   git clone [https://github.com/LuisFelipeCSouza/reconhecimento-de-padroes.git](https://github.com/LuisFelipeCSouza/reconhecimento-de-padroes.git)
-
-## ⚙️ Como Executar
 
 Este projeto utiliza o [uv](https://github.com/astral-sh/uv) da Astral como gerenciador de pacotes e ambientes virtuais, garantindo uma instalação reprodutível e extremamente rápida das dependências.
 
